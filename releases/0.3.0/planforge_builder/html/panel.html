@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PlanForge Builder</title>
+    <link rel="stylesheet" href="panel.css">
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <p class="eyebrow">PlanForge Builder</p>
+        <h1>Desenho rapido de paredes para maquetes</h1>
+        <p class="lead">
+          Ajuste snap, espessura, altura e alinhamento. Depois ative a ferramenta e
+          desenhe como se estivesse montando comodos.
+        </p>
+      </header>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Configuracoes</h2>
+          <span id="versionTag" class="version"></span>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Snap (cm)</span>
+            <input id="snapStep" type="number" min="1" step="1">
+          </label>
+
+          <label class="field">
+            <span>Espessura da parede (cm)</span>
+            <input id="wallThickness" type="number" min="1" step="1">
+          </label>
+
+          <label class="field">
+            <span>Altura da parede (cm)</span>
+            <input id="wallHeight" type="number" min="10" step="1">
+          </label>
+
+          <label class="field">
+            <span>Espessura do piso (cm)</span>
+            <input id="floorThickness" type="number" min="1" step="1">
+          </label>
+
+          <label class="field">
+            <span>Largura padrao da porta (cm)</span>
+            <input id="doorWidth" type="number" min="30" step="1">
+          </label>
+
+          <label class="field">
+            <span>Altura padrao da porta (cm)</span>
+            <input id="doorHeight" type="number" min="100" step="1">
+          </label>
+
+          <label class="field">
+            <span>Alinhamento</span>
+            <select id="alignment">
+              <option value="center">Centro</option>
+              <option value="left">Face esquerda</option>
+              <option value="right">Face direita</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="toggle">
+          <input id="orthoMode" type="checkbox">
+          <span>Travar no eixo dominante em 90 graus</span>
+        </label>
+
+        <label class="toggle">
+          <input id="createFloorOnClose" type="checkbox">
+          <span>Criar piso automatico ao fechar o comodo</span>
+        </label>
+
+        <div class="actions">
+          <button id="activateTool" class="btn btn-primary">Ativar ferramenta</button>
+          <button id="activateDoorTool" class="btn btn-secondary">Corte de porta</button>
+          <button id="saveSettings" class="btn btn-secondary">Salvar</button>
+          <button id="resetSettings" class="btn btn-ghost">Restaurar padrao</button>
+        </div>
+
+        <p id="statusMessage" class="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card tips">
+        <h2>Fluxo rapido</h2>
+        <ol>
+          <li>Ative a ferramenta.</li>
+          <li>Clique para iniciar a primeira parede.</li>
+          <li>Mova o mouse para definir direcao e comprimento.</li>
+          <li>Clique de novo para criar a parede e continuar em sequencia.</li>
+          <li>Pressione Enter para fechar o ambiente no ponto inicial.</li>
+          <li>Ao fechar o contorno, o piso 3D e criado encaixado pela face interna das paredes.</li>
+          <li>Use o botao Corte de porta para visualizar o ghost do corte e confirmar com um clique.</li>
+        </ol>
+
+        <div class="helper">
+          <p><strong>Dica:</strong> voce pode digitar um comprimento na caixa de medidas do SketchUp depois de mover o mouse.</p>
+          <p><strong>Log:</strong> <span id="logPath"></span></p>
+        </div>
+      </section>
+    </div>
+
+    <script src="panel.js"></script>
+  </body>
+</html>

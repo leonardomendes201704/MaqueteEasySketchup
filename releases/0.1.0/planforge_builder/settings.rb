@@ -1,0 +1,128 @@
+module LeonardoLabs
+  module PlanForgeBuilder
+    class Settings
+      STORAGE_NAMESPACE = EXTENSION_NAME.dup.freeze
+      ALIGNMENTS = %w[center left right].freeze
+      DEFAULTS = {
+        :snap_step_cm => 10.0,
+        :wall_thickness_cm => 15.0,
+        :wall_height_cm => 280.0,
+        :ortho_mode => true,
+        :alignment => 'center'
+      }.freeze
+      MINIMUMS = {
+        :snap_step_cm => 1.0,
+        :wall_thickness_cm => 1.0,
+        :wall_height_cm => 10.0
+      }.freeze
+
+      class << self
+        def current
+          @current ||= load_settings
+        end
+
+        def to_h
+          current.dup
+        end
+
+        def update(payload)
+          @current = sanitize(current.merge(symbolize(payload)))
+          persist(@current)
+          @current.dup
+        end
+
+        def reset!
+          @current = DEFAULTS.dup
+          persist(@current)
+          @current.dup
+        end
+
+        def sanitize(payload)
+          normalized = symbolize(payload)
+          values = DEFAULTS.dup
+
+          DEFAULTS.each_key do |key|
+            values[key] = sanitize_value(key, normalized.fetch(key, values[key]))
+          end
+
+          values
+        end
+
+        def length(key)
+          current.fetch(key).to_f.cm
+        end
+
+        def ui_state(message = nil)
+          state = current.dup
+          state[:version] = EXTENSION_VERSION
+          state[:message] = message
+          state[:log_path] = Diagnostics.log_path
+          state
+        end
+
+        private
+
+        def load_settings
+          stored = {}
+
+          DEFAULTS.each do |key, default_value|
+            stored[key] = Sketchup.read_default(STORAGE_NAMESPACE, key.to_s, default_value)
+          end
+
+          sanitize(stored)
+        end
+
+        def persist(values)
+          values.each do |key, value|
+            Sketchup.write_default(STORAGE_NAMESPACE, key.to_s, value)
+          end
+        end
+
+        def sanitize_value(key, value)
+          case key
+          when :ortho_mode
+            truthy?(value)
+          when :alignment
+            alignment = value.to_s.strip.downcase
+            ALIGNMENTS.include?(alignment) ? alignment : DEFAULTS[key]
+          else
+            sanitize_numeric(key, value)
+          end
+        end
+
+        def sanitize_numeric(key, value)
+          parsed = parse_numeric(value)
+          minimum = MINIMUMS[key] || 0.0
+          return DEFAULTS[key] unless parsed && parsed.finite? && parsed > 0.0
+
+          parsed = minimum if parsed < minimum
+          parsed.round(2)
+        end
+
+        def parse_numeric(value)
+          return value.to_f if value.is_a?(Numeric)
+
+          cleaned = value.to_s.strip.tr(',', '.')
+          Float(cleaned)
+        rescue StandardError
+          nil
+        end
+
+        def truthy?(value)
+          return value if value == true || value == false
+
+          %w[1 true yes on].include?(value.to_s.strip.downcase)
+        end
+
+        def symbolize(payload)
+          return {} unless payload.is_a?(Hash)
+
+          payload.each_with_object({}) do |(key, value), result|
+            normalized_key = key.to_s.strip.downcase.gsub(/\s+/, '_').to_sym
+            result[normalized_key] = value
+          end
+        end
+      end
+    end
+  end
+end
