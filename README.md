@@ -58,6 +58,8 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
   construcao de paredes, piso, cortes e metadados geometricos
 - `planforge_builder/room_builder.rb`
   geracao automatica de comodos retangulares completos a partir de ancora e dimensoes
+- `planforge_builder/room_reconciler.rb`
+  reconciliacao de paredes compartilhadas entre comodos do plugin
 - `planforge_builder/baseboard_builder.rb`
   geracao e regeneracao de rodapes
 - `planforge_builder/room_tool.rb`
@@ -98,6 +100,7 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - piso 3D automatico ao fechar o comodo;
 - encaixe do piso pelo lado interno das paredes;
 - geracao automatica de comodo retangular por largura e profundidade em metros por padrao PT-BR;
+- reconciliacao automatica de paredes compartilhadas entre comodos gerados pelo plugin, evitando sobreposicao visual nas unioes;
 - corte de portas com preview ghost;
 - corte de janelas com preview ghost e snap magnetico do topo na altura das portas;
 - rodape interno automatico e regeneravel;
@@ -120,6 +123,7 @@ dist/
   ...
   planforge_builder-0.8.0.rbz
   planforge_builder-0.8.1.rbz
+  planforge_builder-0.9.0.rbz
 planforge_builder/
   baseboard_builder.rb
   commands.rb
@@ -149,6 +153,7 @@ releases/
   ...
   0.8.0/
   0.8.1/
+  0.9.0/
 scripts/
   capture-release.ps1
   export-release-notes.ps1
@@ -182,19 +187,19 @@ Set-Location "C:\Leonardo\Labs\Sketchup Plugins"
 Instalar uma release:
 
 ```powershell
-.\scripts\install-version.ps1 -Version 0.8.1
+.\scripts\install-version.ps1 -Version 0.9.0
 ```
 
 Congelar o estado atual como nova release:
 
 ```powershell
-.\scripts\capture-release.ps1 -Version 0.8.1
+.\scripts\capture-release.ps1 -Version 0.9.0
 ```
 
 Empacotar uma release em `.rbz`:
 
 ```powershell
-.\scripts\package.ps1 -Version 0.8.1
+.\scripts\package.ps1 -Version 0.9.0
 ```
 
 Rodar validacao automatizada da versao instalada:
@@ -204,6 +209,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-installed-smoke-test.ps1
 ```
 
 ## Changelog resumido
+
+### 0.9.0
+
+- reconciliacao automatica de paredes compartilhadas entre comodos do plugin;
+- paredes proxy para reaproveitar a parede fisica existente sem duplicacao;
+- regeneracao e rodape passam a respeitar paredes compartilhadas.
 
 ### 0.8.1
 
@@ -283,9 +294,9 @@ Validado localmente em:
 
 Ultima validacao automatizada conhecida:
 
-- release `0.8.1`
+- release `0.9.0`
 - smoke test com status `ok`
-- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica, geracao automatica e regeneracao de comodo, incluindo parsing e exibicao metrica do gerador
+- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica, geracao automatica, reconciliacao entre comodos e regeneracao de comodo
 
 ## Manutencao
 

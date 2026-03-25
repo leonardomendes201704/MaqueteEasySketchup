@@ -18,6 +18,7 @@ Este arquivo guarda a fila de evolucao do plugin e deve ser atualizado a cada re
 - [x] Materiais automaticos por tipo de elemento.
 - [x] Organizacao automatica em tags separadas para paredes, pisos e rodapes.
 - [x] Geracao automatica de comodo retangular com modal de medidas e ghost de posicionamento.
+- [x] Reconciliacao automatica de paredes compartilhadas entre comodos do plugin para evitar sobreposicao visual.
 
 ## Proximas iteracoes sugeridas
 
