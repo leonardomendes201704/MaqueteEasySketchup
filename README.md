@@ -56,8 +56,12 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
   criacao e aplicacao de materiais automaticos por tipo
 - `planforge_builder/geometry_builder.rb`
   construcao de paredes, piso, cortes e metadados geometricos
+- `planforge_builder/room_builder.rb`
+  geracao automatica de comodos retangulares completos a partir de ancora e dimensoes
 - `planforge_builder/baseboard_builder.rb`
   geracao e regeneracao de rodapes
+- `planforge_builder/room_tool.rb`
+  ferramenta de posicionamento com ghost para gerar comodo retangular
 - `planforge_builder/wall_tool.rb`
   ferramenta de desenho de paredes com preview e fluxo sequencial
 - `planforge_builder/door_tool.rb`
@@ -93,6 +97,7 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - preview dinamico da parede durante o desenho;
 - piso 3D automatico ao fechar o comodo;
 - encaixe do piso pelo lado interno das paredes;
+- geracao automatica de comodo retangular por largura e profundidade;
 - corte de portas com preview ghost;
 - corte de janelas com preview ghost e snap magnetico do topo na altura das portas;
 - rodape interno automatico e regeneravel;
@@ -113,7 +118,7 @@ docs/
 dist/
   planforge_builder-0.1.0.rbz
   ...
-  planforge_builder-0.7.1.rbz
+  planforge_builder-0.8.0.rbz
 planforge_builder/
   baseboard_builder.rb
   commands.rb
@@ -121,6 +126,8 @@ planforge_builder/
   door_tool.rb
   geometry_builder.rb
   main.rb
+  room_builder.rb
+  room_tool.rb
   layer_manager.rb
   material_manager.rb
   parametric_editor.rb
@@ -139,7 +146,7 @@ planforge_builder.rb
 releases/
   0.1.0/
   ...
-  0.7.1/
+  0.8.0/
 scripts/
   capture-release.ps1
   export-release-notes.ps1
@@ -173,19 +180,19 @@ Set-Location "C:\Leonardo\Labs\Sketchup Plugins"
 Instalar uma release:
 
 ```powershell
-.\scripts\install-version.ps1 -Version 0.7.1
+.\scripts\install-version.ps1 -Version 0.8.0
 ```
 
 Congelar o estado atual como nova release:
 
 ```powershell
-.\scripts\capture-release.ps1 -Version 0.7.1
+.\scripts\capture-release.ps1 -Version 0.8.0
 ```
 
 Empacotar uma release em `.rbz`:
 
 ```powershell
-.\scripts\package.ps1 -Version 0.7.1
+.\scripts\package.ps1 -Version 0.8.0
 ```
 
 Rodar validacao automatizada da versao instalada:
@@ -195,6 +202,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-installed-smoke-test.ps1
 ```
 
 ## Changelog resumido
+
+### 0.8.0
+
+- comando de gerar comodo com modal de medidas;
+- ghost de posicionamento ancorado no canto inferior do comodo;
+- geracao automatica das 4 paredes com piso e rodape.
 
 ### 0.7.1
 
@@ -262,9 +275,9 @@ Validado localmente em:
 
 Ultima validacao automatizada conhecida:
 
-- release `0.7.1`
+- release `0.8.0`
 - smoke test com status `ok`
-- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica e regeneracao de comodo
+- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica, geracao automatica e regeneracao de comodo
 
 ## Manutencao
 
