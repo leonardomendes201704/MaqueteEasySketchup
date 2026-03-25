@@ -15,10 +15,10 @@ Este arquivo guarda a fila de evolucao do plugin e deve ser atualizado a cada re
 - [x] Rodape apoiado sobre o piso quando o comodo possui piso.
 - [x] Edicao parametrica de paredes, portas e janelas.
 - [x] Regeneracao completa do comodo a partir da selecao.
+- [x] Materiais automaticos por tipo de elemento.
 
 ## Proximas iteracoes sugeridas
 
-- [ ] Materiais automaticos por tipo de elemento.
 - [ ] Presets de ambientes e familias de paredes.
 - [ ] Biblioteca reutilizavel de portas e janelas.
 - [ ] Pavimentos / niveis.

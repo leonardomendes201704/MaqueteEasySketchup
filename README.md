@@ -1,6 +1,6 @@
 # MaqueteEasySketchup
 
-`MaqueteEasySketchup` e o repositório do plugin **PlanForge Builder**, uma extensao para SketchUp Pro focada em desenho rapido de maquetes arquitetonicas com fluxo simples, visual e produtivo, inspirado em construtores de planta de jogos como The Sims.
+`MaqueteEasySketchup` e o repositorio do plugin **PlanForge Builder**, uma extensao para SketchUp Pro focada em desenho rapido de maquetes arquitetonicas com fluxo simples, visual e produtivo, inspirado em construtores de planta de jogos como The Sims.
 
 ## Visao de negocio
 
@@ -50,6 +50,8 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
   bootstrap, comandos publicos e carga segura dos modulos
 - `planforge_builder/settings.rb`
   configuracoes persistentes e sanitizacao de entradas
+- `planforge_builder/material_manager.rb`
+  criacao e aplicacao de materiais automaticos por tipo
 - `planforge_builder/geometry_builder.rb`
   construcao de paredes, piso, cortes e metadados geometricos
 - `planforge_builder/baseboard_builder.rb`
@@ -76,7 +78,8 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - cada parede e criada como `Sketchup::Group`;
 - piso, rodape e aberturas sao relacionados por metadados no dicionario `leonardo_labs_planforge_builder`;
 - cada comodo recebe um token para permitir regeneracao posterior;
-- portas e janelas ficam registradas como aberturas parametricas da parede.
+- portas e janelas ficam registradas como aberturas parametricas da parede;
+- materiais sao resolvidos por configuracao e aplicados por tipo de entidade.
 
 ## Funcionalidades entregues
 
@@ -93,6 +96,7 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - rodape apoiado sobre o piso quando o comodo possui piso;
 - edicao parametrica de paredes, portas e janelas pelo painel;
 - regeneracao completa do comodo a partir da selecao;
+- materiais automaticos por tipo de elemento, com nome e cor configuraveis;
 - toolbar e menu dedicados;
 - smoke test automatizado no SketchUp Pro 2020.
 
@@ -105,7 +109,7 @@ docs/
 dist/
   planforge_builder-0.1.0.rbz
   ...
-  planforge_builder-0.6.0.rbz
+  planforge_builder-0.7.0.rbz
 planforge_builder/
   baseboard_builder.rb
   commands.rb
@@ -113,6 +117,7 @@ planforge_builder/
   door_tool.rb
   geometry_builder.rb
   main.rb
+  material_manager.rb
   parametric_editor.rb
   room_regenerator.rb
   settings.rb
@@ -129,7 +134,7 @@ planforge_builder.rb
 releases/
   0.1.0/
   ...
-  0.6.0/
+  0.7.0/
 scripts/
   capture-release.ps1
   export-release-notes.ps1
@@ -163,19 +168,19 @@ Set-Location "C:\Leonardo\Labs\Sketchup Plugins"
 Instalar uma release:
 
 ```powershell
-.\scripts\install-version.ps1 -Version 0.6.0
+.\scripts\install-version.ps1 -Version 0.7.0
 ```
 
 Congelar o estado atual como nova release:
 
 ```powershell
-.\scripts\capture-release.ps1 -Version 0.6.0
+.\scripts\capture-release.ps1 -Version 0.7.0
 ```
 
 Empacotar uma release em `.rbz`:
 
 ```powershell
-.\scripts\package.ps1 -Version 0.6.0
+.\scripts\package.ps1 -Version 0.7.0
 ```
 
 Rodar validacao automatizada da versao instalada:
@@ -185,6 +190,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-installed-smoke-test.ps1
 ```
 
 ## Changelog resumido
+
+### 0.7.0
+
+- materiais automaticos por tipo de elemento;
+- nomes e cores configuraveis para parede, piso e rodape;
+- aplicacao automatica dos materiais ao criar ou regenerar o comodo.
 
 ### 0.6.0
 
@@ -240,9 +251,9 @@ Validado localmente em:
 
 Ultima validacao automatizada conhecida:
 
-- release `0.6.0`
+- release `0.7.0`
 - smoke test com status `ok`
-- cobertura de parede, porta, janela, piso, rodape, edicao parametrica e regeneracao de comodo
+- cobertura de parede, porta, janela, piso, rodape, materiais, edicao parametrica e regeneracao de comodo
 
 ## Manutencao
 
@@ -254,7 +265,6 @@ Ultima validacao automatizada conhecida:
 
 ## Proximas evolucoes sugeridas
 
-- materiais automaticos por tipo de elemento;
 - presets de ambientes e familias de paredes;
 - biblioteca reutilizavel de portas e janelas;
 - pavimentos e niveis;
