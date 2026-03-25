@@ -97,7 +97,7 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - preview dinamico da parede durante o desenho;
 - piso 3D automatico ao fechar o comodo;
 - encaixe do piso pelo lado interno das paredes;
-- geracao automatica de comodo retangular por largura e profundidade;
+- geracao automatica de comodo retangular por largura e profundidade em metros por padrao PT-BR;
 - corte de portas com preview ghost;
 - corte de janelas com preview ghost e snap magnetico do topo na altura das portas;
 - rodape interno automatico e regeneravel;
@@ -119,6 +119,7 @@ dist/
   planforge_builder-0.1.0.rbz
   ...
   planforge_builder-0.8.0.rbz
+  planforge_builder-0.8.1.rbz
 planforge_builder/
   baseboard_builder.rb
   commands.rb
@@ -147,6 +148,7 @@ releases/
   0.1.0/
   ...
   0.8.0/
+  0.8.1/
 scripts/
   capture-release.ps1
   export-release-notes.ps1
@@ -180,19 +182,19 @@ Set-Location "C:\Leonardo\Labs\Sketchup Plugins"
 Instalar uma release:
 
 ```powershell
-.\scripts\install-version.ps1 -Version 0.8.0
+.\scripts\install-version.ps1 -Version 0.8.1
 ```
 
 Congelar o estado atual como nova release:
 
 ```powershell
-.\scripts\capture-release.ps1 -Version 0.8.0
+.\scripts\capture-release.ps1 -Version 0.8.1
 ```
 
 Empacotar uma release em `.rbz`:
 
 ```powershell
-.\scripts\package.ps1 -Version 0.8.0
+.\scripts\package.ps1 -Version 0.8.1
 ```
 
 Rodar validacao automatizada da versao instalada:
@@ -202,6 +204,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-installed-smoke-test.ps1
 ```
 
 ## Changelog resumido
+
+### 0.8.1
+
+- gerador de comodo com entrada em metros por padrao PT-BR;
+- parser proprio para `m`, `cm` e `mm`, tratando valores sem unidade como metros;
+- ghost e VCB do gerador exibem dimensoes em metros sem depender da unidade global do SketchUp.
 
 ### 0.8.0
 
@@ -275,9 +283,9 @@ Validado localmente em:
 
 Ultima validacao automatizada conhecida:
 
-- release `0.8.0`
+- release `0.8.1`
 - smoke test com status `ok`
-- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica, geracao automatica e regeneracao de comodo
+- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica, geracao automatica e regeneracao de comodo, incluindo parsing e exibicao metrica do gerador
 
 ## Manutencao
 
