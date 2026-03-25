@@ -50,6 +50,8 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
   bootstrap, comandos publicos e carga segura dos modulos
 - `planforge_builder/settings.rb`
   configuracoes persistentes e sanitizacao de entradas
+- `planforge_builder/layer_manager.rb`
+  criacao e atribuicao automatica das tags Walls, Floors e Baseboards
 - `planforge_builder/material_manager.rb`
   criacao e aplicacao de materiais automaticos por tipo
 - `planforge_builder/geometry_builder.rb`
@@ -79,6 +81,7 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - piso, rodape e aberturas sao relacionados por metadados no dicionario `leonardo_labs_planforge_builder`;
 - cada comodo recebe um token para permitir regeneracao posterior;
 - portas e janelas ficam registradas como aberturas parametricas da parede;
+- grupos de parede, piso e rodape sao organizados em tags separadas;
 - materiais sao resolvidos por configuracao e aplicados por tipo de entidade.
 
 ## Funcionalidades entregues
@@ -96,6 +99,7 @@ Desenhar uma planta baixa conceitual no SketchUp com as ferramentas nativas cost
 - rodape apoiado sobre o piso quando o comodo possui piso;
 - edicao parametrica de paredes, portas e janelas pelo painel;
 - regeneracao completa do comodo a partir da selecao;
+- organizacao automatica em tags `Walls`, `Floors` e `Baseboards`;
 - materiais automaticos por tipo de elemento, com nome e cor configuraveis;
 - toolbar e menu dedicados;
 - smoke test automatizado no SketchUp Pro 2020.
@@ -109,7 +113,7 @@ docs/
 dist/
   planforge_builder-0.1.0.rbz
   ...
-  planforge_builder-0.7.0.rbz
+  planforge_builder-0.7.1.rbz
 planforge_builder/
   baseboard_builder.rb
   commands.rb
@@ -117,6 +121,7 @@ planforge_builder/
   door_tool.rb
   geometry_builder.rb
   main.rb
+  layer_manager.rb
   material_manager.rb
   parametric_editor.rb
   room_regenerator.rb
@@ -134,7 +139,7 @@ planforge_builder.rb
 releases/
   0.1.0/
   ...
-  0.7.0/
+  0.7.1/
 scripts/
   capture-release.ps1
   export-release-notes.ps1
@@ -168,19 +173,19 @@ Set-Location "C:\Leonardo\Labs\Sketchup Plugins"
 Instalar uma release:
 
 ```powershell
-.\scripts\install-version.ps1 -Version 0.7.0
+.\scripts\install-version.ps1 -Version 0.7.1
 ```
 
 Congelar o estado atual como nova release:
 
 ```powershell
-.\scripts\capture-release.ps1 -Version 0.7.0
+.\scripts\capture-release.ps1 -Version 0.7.1
 ```
 
 Empacotar uma release em `.rbz`:
 
 ```powershell
-.\scripts\package.ps1 -Version 0.7.0
+.\scripts\package.ps1 -Version 0.7.1
 ```
 
 Rodar validacao automatizada da versao instalada:
@@ -190,6 +195,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-installed-smoke-test.ps1
 ```
 
 ## Changelog resumido
+
+### 0.7.1
+
+- tags separadas `Walls`, `Floors` e `Baseboards`;
+- atribuicao automatica dessas tags na criacao e regeneracao;
+- geometria interna mantida em `Layer0`.
 
 ### 0.7.0
 
@@ -251,9 +262,9 @@ Validado localmente em:
 
 Ultima validacao automatizada conhecida:
 
-- release `0.7.0`
+- release `0.7.1`
 - smoke test com status `ok`
-- cobertura de parede, porta, janela, piso, rodape, materiais, edicao parametrica e regeneracao de comodo
+- cobertura de parede, porta, janela, piso, rodape, tags, materiais, edicao parametrica e regeneracao de comodo
 
 ## Manutencao
 

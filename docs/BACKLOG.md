@@ -16,6 +16,7 @@ Este arquivo guarda a fila de evolucao do plugin e deve ser atualizado a cada re
 - [x] Edicao parametrica de paredes, portas e janelas.
 - [x] Regeneracao completa do comodo a partir da selecao.
 - [x] Materiais automaticos por tipo de elemento.
+- [x] Organizacao automatica em tags separadas para paredes, pisos e rodapes.
 
 ## Proximas iteracoes sugeridas
 
