@@ -36,6 +36,9 @@ LeonardoLabs::PlanForgeBuilder.safe_require('metric_units')
 LeonardoLabs::PlanForgeBuilder.safe_require('layer_manager')
 LeonardoLabs::PlanForgeBuilder.safe_require('material_manager')
 LeonardoLabs::PlanForgeBuilder.safe_require('geometry_builder')
+LeonardoLabs::PlanForgeBuilder.safe_require('wall_block_builder')
+LeonardoLabs::PlanForgeBuilder.safe_require('material_memorial_report')
+LeonardoLabs::PlanForgeBuilder.safe_require('material_memorial_pdf')
 LeonardoLabs::PlanForgeBuilder.safe_require('baseboard_builder')
 LeonardoLabs::PlanForgeBuilder.safe_require('room_builder')
 LeonardoLabs::PlanForgeBuilder.safe_require('room_reconciler')
@@ -169,10 +172,77 @@ module LeonardoLabs
       false
     end
 
+    def convert_selected_wall_to_blocks
+      message = ParametricEditor.convert_selected_wall_to_blocks(Sketchup.active_model, Sketchup.active_model.selection)
+      SettingsDialog.push_state(message)
+      true
+    rescue StandardError => error
+      Diagnostics.error('convert_selected_wall_to_blocks', error)
+      UI.messagebox("#{EXTENSION_NAME}: erro ao converter a parede em blocos.\n\n#{error.message}")
+      false
+    end
+
+    def remove_selected_wall_blocks
+      message = ParametricEditor.remove_selected_wall_blocks(Sketchup.active_model, Sketchup.active_model.selection)
+      SettingsDialog.push_state(message)
+      true
+    rescue StandardError => error
+      Diagnostics.error('remove_selected_wall_blocks', error)
+      UI.messagebox("#{EXTENSION_NAME}: erro ao remover a alvenaria em blocos.\n\n#{error.message}")
+      false
+    end
+
+    def generate_material_memorial_pdf(output_path = nil)
+      model = Sketchup.active_model
+      report = MaterialMemorialReport.build(model, Settings.to_h)
+      target_path = output_path.to_s.strip
+      target_path = UI.savepanel('Gerar memorial PDF', default_memorial_directory(model), default_memorial_filename(model, report)) if target_path.empty?
+      return false unless target_path
+
+      written_path = MaterialMemorialPdf.write(report, target_path)
+      SettingsDialog.push_state("Memorial PDF gerado em: #{written_path}")
+      true
+    rescue ArgumentError => error
+      Diagnostics.error('generate_material_memorial_pdf', error)
+      UI.messagebox("#{EXTENSION_NAME}: #{error.message}")
+      false
+    rescue StandardError => error
+      Diagnostics.error('generate_material_memorial_pdf', error)
+      UI.messagebox("#{EXTENSION_NAME}: erro ao gerar o memorial PDF.\n\n#{error.message}")
+      false
+    end
+
     private
 
     def coerce_metric_length(value)
       MetricUnits.parse_length(value, 'm')
+    end
+
+    def default_memorial_directory(model)
+      model_path = model.path.to_s
+      return File.dirname(model_path) unless model_path.empty?
+
+      documents = File.join(ENV['USERPROFILE'].to_s, 'Documents')
+      return documents if File.directory?(documents)
+
+      ENV['USERPROFILE'].to_s.empty? ? ROOT : ENV['USERPROFILE'].to_s
+    end
+
+    def default_memorial_filename(model, report)
+      base_name = report.dig(:header, :project_name).to_s.strip
+      if base_name.empty?
+        model_path = model.path.to_s
+        base_name = model_path.empty? ? model.title.to_s.strip : File.basename(model_path, '.skp')
+      end
+      base_name = 'modelo_atual' if base_name.to_s.strip.empty?
+
+      "#{sanitize_filename(base_name)}-memorial-descritivo-#{Time.now.strftime('%Y-%m-%d')}.pdf"
+    end
+
+    def sanitize_filename(text)
+      cleaned = text.to_s.strip.gsub(/[\\\/:\*\?\"<>\|]+/, '-')
+      cleaned = cleaned.gsub(/\s+/, '-')
+      cleaned.empty? ? 'modelo_atual' : cleaned
     end
   end
 end

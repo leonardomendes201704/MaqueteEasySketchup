@@ -13,6 +13,13 @@ module LeonardoLabs
         floor_material_color
         baseboard_material_color
       ].freeze
+      MEMORIAL_TEXT_KEYS = %i[
+        memorial_project_name
+        memorial_client_name
+        memorial_site_name
+        memorial_responsible_name
+        memorial_responsible_registry
+      ].freeze
       DEFAULTS = {
         :snap_step_cm => 10.0,
         :wall_thickness_cm => 15.0,
@@ -36,7 +43,13 @@ module LeonardoLabs
         :create_floor_on_close => true,
         :create_baseboard_on_close => true,
         :ortho_mode => true,
-        :alignment => 'center'
+        :alignment => 'center',
+        :memorial_project_name => '',
+        :memorial_client_name => '',
+        :memorial_site_name => '',
+        :memorial_responsible_name => '',
+        :memorial_responsible_registry => '',
+        :memorial_notes => ''
       }.freeze
       MINIMUMS = {
         :snap_step_cm => 1.0,
@@ -126,6 +139,10 @@ module LeonardoLabs
             sanitize_name(key, value)
           when *MATERIAL_COLOR_KEYS
             sanitize_color(key, value)
+          when *MEMORIAL_TEXT_KEYS
+            sanitize_memorial_text(key, value)
+          when :memorial_notes
+            sanitize_memorial_notes(value)
           else
             sanitize_numeric(key, value)
           end
@@ -171,6 +188,17 @@ module LeonardoLabs
           return DEFAULTS[key] unless compact.match?(/\A\h{6}\z/)
 
           "##{compact.upcase}"
+        end
+
+        def sanitize_memorial_text(key, value)
+          text = value.to_s.strip
+          return DEFAULTS[key] if text.empty?
+
+          text[0, 120]
+        end
+
+        def sanitize_memorial_notes(value)
+          value.to_s.strip[0, 2000]
         end
 
         def symbolize(payload)

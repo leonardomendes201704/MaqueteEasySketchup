@@ -109,6 +109,16 @@ module LeonardoLabs
             push_state('Nao foi possivel regenerar o comodo selecionado.') unless success
           end
 
+          panel.add_action_callback('convertSelectedWallToBlocks') do |_context|
+            success = PlanForgeBuilder.convert_selected_wall_to_blocks
+            push_state('Nao foi possivel converter a parede em blocos.') unless success
+          end
+
+          panel.add_action_callback('removeSelectedWallBlocks') do |_context|
+            success = PlanForgeBuilder.remove_selected_wall_blocks
+            push_state('Nao foi possivel remover a alvenaria em blocos.') unless success
+          end
+
           panel.set_on_closed do
             @dialog = nil
           end

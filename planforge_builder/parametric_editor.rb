@@ -4,7 +4,7 @@ module LeonardoLabs
       extend self
 
       def selection_state(model = Sketchup.active_model)
-        entity = selected_entity(model.selection)
+        entity = selected_entity(model.selection, model)
         return empty_selection_state unless entity
 
         room_token = GeometryBuilder.room_token(entity)
@@ -13,6 +13,7 @@ module LeonardoLabs
         if GeometryBuilder.wall_group?(entity)
           wall = GeometryBuilder.wall_info(entity)
           settings = GeometryBuilder.entity_settings(entity)
+          quantities = GeometryBuilder.wall_quantities(entity)
           return empty_selection_state('Nao foi possivel ler a parede selecionada.') unless wall
 
           openings = GeometryBuilder.opening_records(entity).each_with_index.map do |record, index|
@@ -23,13 +24,17 @@ module LeonardoLabs
             :available => true,
             :entity_type => 'wall',
             :title => 'Parede selecionada',
-            :hint => 'Edite os parametros abaixo e regenere o comodo para recalcular piso, rodape e encontros.',
+            :hint => 'Edite os parametros abaixo, gere a maquete em blocos quando quiser e regenere o comodo para recalcular o restante.',
             :room => room_state(snapshot),
             :wall => {
               :length_cm => to_cm(wall[:length]),
               :wall_thickness_cm => settings[:wall_thickness_cm],
               :wall_height_cm => settings[:wall_height_cm],
               :alignment => settings[:alignment],
+              :block_estimate => block_estimate_state(quantities),
+              :mortar_estimate => mortar_estimate_state(quantities),
+              :structure_estimate => structure_estimate_state(entity),
+              :block_conversion => block_conversion_state(model, entity),
               :openings => openings
             }
           }
@@ -38,16 +43,16 @@ module LeonardoLabs
             :available => true,
             :entity_type => 'room',
             :title => 'Comodo selecionado',
-            :hint => 'Selecione uma parede do plugin para editar portas ou janelas especificas.',
+            :hint => 'Selecione uma parede do plugin para editar portas, janelas ou converter a parede em blocos.',
             :room => room_state(snapshot)
           }
         else
-          empty_selection_state('Selecione uma parede, piso ou rodape criado pelo PlanForge Builder.')
+          empty_selection_state('Selecione uma parede, piso, rodape ou alvenaria em blocos criado pelo PlanForge Builder.')
         end
       end
 
       def apply_wall_edits(model, selection, payload)
-        wall = selected_wall(selection)
+        wall = selected_wall(selection, model)
         raise ArgumentError, 'Selecione uma parede do PlanForge Builder para editar.' unless wall
 
         overrides = filtered_settings_payload(payload)
@@ -64,6 +69,8 @@ module LeonardoLabs
 
           rebuild_wall_from_snapshot(snapshot, index, settings)
           refresh_neighbor_walls(snapshot, index)
+          WallBlockBuilder.refresh_for_walls(model, snapshot[:walls])
+          focus_entity_for_wall(model, wall)
           model.commit_operation
           'Parede atualizada. Use Regenerar comodo para recalcular piso, rodape e todo o contorno.'
         else
@@ -76,6 +83,8 @@ module LeonardoLabs
             nil,
             GeometryBuilder.opening_records(wall)
           )
+          WallBlockBuilder.refresh_for_wall(model, wall)
+          focus_entity_for_wall(model, wall)
           model.commit_operation
           'Parede atualizada.'
         end
@@ -85,7 +94,7 @@ module LeonardoLabs
       end
 
       def apply_opening_edits(model, selection, payload)
-        wall = selected_wall(selection)
+        wall = selected_wall(selection, model)
         raise ArgumentError, 'Selecione a parede que contem a abertura a editar.' unless wall
 
         wall_info = GeometryBuilder.wall_info(wall)
@@ -106,6 +115,7 @@ module LeonardoLabs
 
         if GeometryBuilder.room_token(wall)
           RoomRegenerator.regenerate_for_entity(model, wall, GeometryBuilder.entity_settings(wall))
+          focus_entity_for_wall(model, wall)
           model.commit_operation
           "#{label_for_kind(record[:kind])} atualizada e comodo regenerado."
         else
@@ -118,6 +128,8 @@ module LeonardoLabs
             nil,
             updated_records
           )
+          WallBlockBuilder.refresh_for_wall(model, wall)
+          focus_entity_for_wall(model, wall)
           model.commit_operation
           "#{label_for_kind(record[:kind])} atualizada."
         end
@@ -127,13 +139,15 @@ module LeonardoLabs
       end
 
       def regenerate_selected_room(model, selection)
-        entity = selected_room_entity(selection)
-        raise ArgumentError, 'Selecione uma parede, piso ou rodape de um comodo criado pelo PlanForge Builder.' unless entity
+        entity = selected_room_entity(selection, model)
+        raise ArgumentError, 'Selecione uma parede, piso, rodape ou alvenaria em blocos de um comodo criado pelo PlanForge Builder.' unless entity
 
-        room_settings = GeometryBuilder.wall_group?(entity) ? GeometryBuilder.entity_settings(entity) : nil
+        wall = selected_wall(selection, model)
+        room_settings = wall ? GeometryBuilder.entity_settings(wall) : nil
 
         model.start_operation('PlanForge Builder - Regenerar comodo', true)
         RoomRegenerator.regenerate_for_entity(model, entity, room_settings)
+        focus_entity_for_wall(model, wall) if wall&.valid?
         model.commit_operation
         'Comodo regenerado.'
       rescue StandardError => error
@@ -141,9 +155,37 @@ module LeonardoLabs
         raise error
       end
 
+      def convert_selected_wall_to_blocks(model, selection)
+        wall = selected_wall(selection, model)
+        raise ArgumentError, 'Selecione uma parede fisica do PlanForge Builder para converter em blocos.' unless GeometryBuilder.physical_wall_group?(wall)
+
+        model.start_operation('PlanForge Builder - Converter parede em blocos', true)
+        block_group = WallBlockBuilder.build_for_wall(model, wall, GeometryBuilder.entity_settings(wall), true)
+        select_entity(model, block_group || wall)
+        model.commit_operation
+        'Parede convertida em blocos com estrutura.'
+      rescue StandardError => error
+        model.abort_operation rescue nil
+        raise error
+      end
+
+      def remove_selected_wall_blocks(model, selection)
+        wall = selected_wall(selection, model)
+        raise ArgumentError, 'Selecione uma parede do PlanForge Builder para remover a alvenaria em blocos.' unless wall
+
+        model.start_operation('PlanForge Builder - Remover parede em blocos', true)
+        WallBlockBuilder.remove_for_wall(model, wall)
+        select_entity(model, wall)
+        model.commit_operation
+        'Alvenaria em blocos removida.'
+      rescue StandardError => error
+        model.abort_operation rescue nil
+        raise error
+      end
+
       private
 
-      def empty_selection_state(message = 'Selecione uma parede do plugin para editar parametros e aberturas.')
+      def empty_selection_state(message = 'Selecione uma parede do plugin para editar parametros, aberturas ou converter em blocos.')
         {
           :available => false,
           :entity_type => 'none',
@@ -152,18 +194,24 @@ module LeonardoLabs
         }
       end
 
-      def selected_entity(selection)
-        entities = selection.to_a
-        entities.find { |entity| GeometryBuilder.wall_group?(entity) } ||
-          entities.find { |entity| GeometryBuilder.room_token(entity) }
+      def selected_entity(selection, model = Sketchup.active_model)
+        wall = selected_wall(selection, model)
+        return wall if wall
+
+        selection.to_a.find { |entity| GeometryBuilder.room_token(entity) }
       end
 
-      def selected_wall(selection)
-        selection.to_a.find { |entity| GeometryBuilder.wall_group?(entity) }
+      def selected_wall(selection, model = Sketchup.active_model)
+        selection.to_a.each do |entity|
+          wall = WallBlockBuilder.host_wall_for_entity(model, entity)
+          return wall if GeometryBuilder.wall_group?(wall)
+        end
+
+        nil
       end
 
-      def selected_room_entity(selection)
-        selected_entity(selection)
+      def selected_room_entity(selection, model = Sketchup.active_model)
+        selected_entity(selection, model)
       end
 
       def room_state(snapshot)
@@ -187,6 +235,63 @@ module LeonardoLabs
           :center_distance_cm => to_cm(record[:center_distance]),
           :bottom_height_cm => to_cm(record[:bottom_z] - wall[:base_z]),
           :top_height_cm => to_cm(record[:top_z] - wall[:base_z])
+        }
+      end
+
+      def block_estimate_state(quantities)
+        return nil unless quantities
+
+        {
+          :block_type => quantities[:block_type],
+          :gross_area_m2 => quantities[:gross_area_m2].round(2),
+          :opening_area_m2 => quantities[:opening_area_m2].round(2),
+          :net_area_m2 => quantities[:net_area_m2].round(2),
+          :block_count => quantities[:block_count].to_i,
+          :warning => quantities[:block_warning].to_s
+        }
+      end
+
+      def mortar_estimate_state(quantities)
+        return nil unless quantities
+
+        {
+          :mix => quantities[:mortar_mix],
+          :volume_m3 => quantities[:mortar_volume_m3].round(3),
+          :cement_kg => quantities[:mortar_cement_kg].round(1),
+          :lime_kg => quantities[:mortar_lime_kg].round(1),
+          :sand_m3 => quantities[:mortar_sand_m3].round(3),
+          :note => quantities[:mortar_note].to_s
+        }
+      end
+
+      def block_conversion_state(model, wall)
+        state = WallBlockBuilder.conversion_state(model, wall)
+        {
+          :has_block_conversion => !!state[:has_block_conversion],
+          :block_conversion_hidden_host => !!state[:block_conversion_hidden_host],
+          :block_conversion_warning => state[:block_conversion_warning].to_s,
+          :button_label => state[:button_label].to_s,
+          :can_remove_block_conversion => !!state[:can_remove_block_conversion]
+        }
+      end
+
+      def structure_estimate_state(wall)
+        estimate = WallBlockBuilder.structure_estimate(wall)
+        return nil unless estimate
+
+        {
+          :column_count => estimate[:column_count].to_i,
+          :bond_beam_length_m => estimate[:bond_beam_length_m].round(2),
+          :lintel_count => estimate[:lintel_count].to_i,
+          :lintel_length_m => estimate[:lintel_length_m].round(2),
+          :sill_beam_count => estimate[:sill_beam_count].to_i,
+          :sill_beam_length_m => estimate[:sill_beam_length_m].round(2),
+          :column_volume_m3 => estimate[:column_volume_m3].round(3),
+          :bond_beam_volume_m3 => estimate[:bond_beam_volume_m3].round(3),
+          :lintel_volume_m3 => estimate[:lintel_volume_m3].round(3),
+          :sill_beam_volume_m3 => estimate[:sill_beam_volume_m3].round(3),
+          :total_concrete_volume_m3 => estimate[:total_concrete_volume_m3].round(3),
+          :warning => estimate[:warning_text].to_s
         }
       end
 
@@ -233,6 +338,19 @@ module LeonardoLabs
         neighbors.each do |neighbor_index|
           rebuild_wall_from_snapshot(snapshot, neighbor_index)
         end
+      end
+
+      def focus_entity_for_wall(model, wall)
+        return unless wall&.valid?
+
+        select_entity(model, WallBlockBuilder.block_group_for_wall(model, wall) || wall)
+      end
+
+      def select_entity(model, entity)
+        return unless entity&.valid?
+
+        model.selection.clear
+        model.selection.add(entity)
       end
 
       def update_opening_record(record, wall_info, payload)

@@ -26,6 +26,12 @@
     elements.floorMaterialColor = document.getElementById('floorMaterialColor');
     elements.baseboardMaterialName = document.getElementById('baseboardMaterialName');
     elements.baseboardMaterialColor = document.getElementById('baseboardMaterialColor');
+    elements.memorialProjectName = document.getElementById('memorialProjectName');
+    elements.memorialClientName = document.getElementById('memorialClientName');
+    elements.memorialSiteName = document.getElementById('memorialSiteName');
+    elements.memorialResponsibleName = document.getElementById('memorialResponsibleName');
+    elements.memorialResponsibleRegistry = document.getElementById('memorialResponsibleRegistry');
+    elements.memorialNotes = document.getElementById('memorialNotes');
     elements.activateRoomTool = document.getElementById('activateRoomTool');
     elements.activateTool = document.getElementById('activateTool');
     elements.activateDoorTool = document.getElementById('activateDoorTool');
@@ -46,7 +52,35 @@
     elements.selectedWallThickness = document.getElementById('selectedWallThickness');
     elements.selectedWallHeight = document.getElementById('selectedWallHeight');
     elements.selectedWallAlignment = document.getElementById('selectedWallAlignment');
+    elements.selectedWallBlockType = document.getElementById('selectedWallBlockType');
+    elements.selectedWallGrossArea = document.getElementById('selectedWallGrossArea');
+    elements.selectedWallOpeningArea = document.getElementById('selectedWallOpeningArea');
+    elements.selectedWallNetArea = document.getElementById('selectedWallNetArea');
+    elements.selectedWallBlockCount = document.getElementById('selectedWallBlockCount');
+    elements.selectedWallMortarMix = document.getElementById('selectedWallMortarMix');
+    elements.selectedWallMortarVolume = document.getElementById('selectedWallMortarVolume');
+    elements.selectedWallMortarCement = document.getElementById('selectedWallMortarCement');
+    elements.selectedWallMortarLime = document.getElementById('selectedWallMortarLime');
+    elements.selectedWallMortarSand = document.getElementById('selectedWallMortarSand');
+    elements.selectedWallMortarNote = document.getElementById('selectedWallMortarNote');
+    elements.selectedWallStructureColumns = document.getElementById('selectedWallStructureColumns');
+    elements.selectedWallStructureBondBeamLength = document.getElementById('selectedWallStructureBondBeamLength');
+    elements.selectedWallStructureLintelCount = document.getElementById('selectedWallStructureLintelCount');
+    elements.selectedWallStructureLintelLength = document.getElementById('selectedWallStructureLintelLength');
+    elements.selectedWallStructureSillCount = document.getElementById('selectedWallStructureSillCount');
+    elements.selectedWallStructureSillLength = document.getElementById('selectedWallStructureSillLength');
+    elements.selectedWallStructureColumnVolume = document.getElementById('selectedWallStructureColumnVolume');
+    elements.selectedWallStructureBondBeamVolume = document.getElementById('selectedWallStructureBondBeamVolume');
+    elements.selectedWallStructureLintelVolume = document.getElementById('selectedWallStructureLintelVolume');
+    elements.selectedWallStructureSillVolume = document.getElementById('selectedWallStructureSillVolume');
+    elements.selectedWallStructureTotalVolume = document.getElementById('selectedWallStructureTotalVolume');
+    elements.selectedWallBlockWarning = document.getElementById('selectedWallBlockWarning');
+    elements.selectedWallStructureWarning = document.getElementById('selectedWallStructureWarning');
+    elements.selectedWallConversionStatus = document.getElementById('selectedWallConversionStatus');
+    elements.selectedWallConversionWarning = document.getElementById('selectedWallConversionWarning');
     elements.applyWallEdits = document.getElementById('applyWallEdits');
+    elements.convertSelectedWallBlocks = document.getElementById('convertSelectedWallBlocks');
+    elements.removeSelectedWallBlocks = document.getElementById('removeSelectedWallBlocks');
     elements.regenerateSelectedRoom = document.getElementById('regenerateSelectedRoom');
     elements.openingSelect = document.getElementById('openingSelect');
     elements.openingWidth = document.getElementById('openingWidth');
@@ -79,7 +113,13 @@
       elements.floorMaterialName,
       elements.floorMaterialColor,
       elements.baseboardMaterialName,
-      elements.baseboardMaterialColor
+      elements.baseboardMaterialColor,
+      elements.memorialProjectName,
+      elements.memorialClientName,
+      elements.memorialSiteName,
+      elements.memorialResponsibleName,
+      elements.memorialResponsibleRegistry,
+      elements.memorialNotes
     ].forEach(function (element) {
       element.addEventListener('change', autoSave);
     });
@@ -128,6 +168,14 @@
 
     elements.applyWallEdits.addEventListener('click', function () {
       callSketchup('applyWallEdits', selectedWallPayload());
+    });
+
+    elements.convertSelectedWallBlocks.addEventListener('click', function () {
+      callSketchup('convertSelectedWallToBlocks');
+    });
+
+    elements.removeSelectedWallBlocks.addEventListener('click', function () {
+      callSketchup('removeSelectedWallBlocks');
     });
 
     elements.regenerateSelectedRoom.addEventListener('click', function () {
@@ -185,7 +233,13 @@
       floor_material_name: elements.floorMaterialName.value,
       floor_material_color: elements.floorMaterialColor.value,
       baseboard_material_name: elements.baseboardMaterialName.value,
-      baseboard_material_color: elements.baseboardMaterialColor.value
+      baseboard_material_color: elements.baseboardMaterialColor.value,
+      memorial_project_name: elements.memorialProjectName.value,
+      memorial_client_name: elements.memorialClientName.value,
+      memorial_site_name: elements.memorialSiteName.value,
+      memorial_responsible_name: elements.memorialResponsibleName.value,
+      memorial_responsible_registry: elements.memorialResponsibleRegistry.value,
+      memorial_notes: elements.memorialNotes.value
     };
   }
 
@@ -224,6 +278,12 @@
     elements.floorMaterialColor.value = state.floor_material_color;
     elements.baseboardMaterialName.value = state.baseboard_material_name;
     elements.baseboardMaterialColor.value = state.baseboard_material_color;
+    elements.memorialProjectName.value = state.memorial_project_name || '';
+    elements.memorialClientName.value = state.memorial_client_name || '';
+    elements.memorialSiteName.value = state.memorial_site_name || '';
+    elements.memorialResponsibleName.value = state.memorial_responsible_name || '';
+    elements.memorialResponsibleRegistry.value = state.memorial_responsible_registry || '';
+    elements.memorialNotes.value = state.memorial_notes || '';
     elements.versionTag.textContent = 'v' + state.version;
     elements.logPath.textContent = state.log_path || '';
     elements.statusMessage.textContent = state.message || '';
@@ -250,6 +310,10 @@
     const wall = selection.wall;
     if (!selection.available || !wall) {
       elements.selectedWallEditor.classList.add('is-hidden');
+      hydrateBlockEstimate(null);
+      hydrateMortarEstimate(null);
+      hydrateStructureEstimate(null);
+      hydrateBlockConversion(null);
       resetOpeningEditor([]);
       return;
     }
@@ -259,7 +323,92 @@
     elements.selectedWallThickness.value = wall.wall_thickness_cm;
     elements.selectedWallHeight.value = wall.wall_height_cm;
     elements.selectedWallAlignment.value = wall.alignment;
+    hydrateBlockEstimate(wall.block_estimate || null);
+    hydrateMortarEstimate(wall.mortar_estimate || null);
+    hydrateStructureEstimate(wall.structure_estimate || null);
+    hydrateBlockConversion(wall.block_conversion || null);
     resetOpeningEditor(wall.openings || []);
+  }
+
+  function hydrateBlockEstimate(estimate) {
+    elements.selectedWallBlockType.value = estimate ? stringValue(estimate.block_type) : '';
+    elements.selectedWallGrossArea.value = estimate ? stringValue(estimate.gross_area_m2) : '';
+    elements.selectedWallOpeningArea.value = estimate ? stringValue(estimate.opening_area_m2) : '';
+    elements.selectedWallNetArea.value = estimate ? stringValue(estimate.net_area_m2) : '';
+    elements.selectedWallBlockCount.value = estimate ? stringValue(estimate.block_count) : '';
+
+    if (estimate && estimate.warning) {
+      elements.selectedWallBlockWarning.textContent = estimate.warning;
+      elements.selectedWallBlockWarning.classList.remove('is-hidden');
+    } else {
+      elements.selectedWallBlockWarning.textContent = '';
+      elements.selectedWallBlockWarning.classList.add('is-hidden');
+    }
+  }
+
+  function hydrateMortarEstimate(estimate) {
+    elements.selectedWallMortarMix.value = estimate ? stringValue(estimate.mix) : '';
+    elements.selectedWallMortarVolume.value = estimate ? stringValue(estimate.volume_m3) : '';
+    elements.selectedWallMortarCement.value = estimate ? stringValue(estimate.cement_kg) : '';
+    elements.selectedWallMortarLime.value = estimate ? stringValue(estimate.lime_kg) : '';
+    elements.selectedWallMortarSand.value = estimate ? stringValue(estimate.sand_m3) : '';
+    elements.selectedWallMortarNote.textContent = estimate ? stringValue(estimate.note) : '';
+  }
+
+  function hydrateStructureEstimate(estimate) {
+    elements.selectedWallStructureColumns.value = estimate ? stringValue(estimate.column_count) : '';
+    elements.selectedWallStructureBondBeamLength.value = estimate ? stringValue(estimate.bond_beam_length_m) : '';
+    elements.selectedWallStructureLintelCount.value = estimate ? stringValue(estimate.lintel_count) : '';
+    elements.selectedWallStructureLintelLength.value = estimate ? stringValue(estimate.lintel_length_m) : '';
+    elements.selectedWallStructureSillCount.value = estimate ? stringValue(estimate.sill_beam_count) : '';
+    elements.selectedWallStructureSillLength.value = estimate ? stringValue(estimate.sill_beam_length_m) : '';
+    elements.selectedWallStructureColumnVolume.value = estimate ? stringValue(estimate.column_volume_m3) : '';
+    elements.selectedWallStructureBondBeamVolume.value = estimate ? stringValue(estimate.bond_beam_volume_m3) : '';
+    elements.selectedWallStructureLintelVolume.value = estimate ? stringValue(estimate.lintel_volume_m3) : '';
+    elements.selectedWallStructureSillVolume.value = estimate ? stringValue(estimate.sill_beam_volume_m3) : '';
+    elements.selectedWallStructureTotalVolume.value = estimate ? stringValue(estimate.total_concrete_volume_m3) : '';
+
+    if (estimate && estimate.warning) {
+      elements.selectedWallStructureWarning.textContent = estimate.warning;
+      elements.selectedWallStructureWarning.classList.remove('is-hidden');
+    } else {
+      elements.selectedWallStructureWarning.textContent = '';
+      elements.selectedWallStructureWarning.classList.add('is-hidden');
+    }
+  }
+
+  function hydrateBlockConversion(conversion) {
+    if (!conversion) {
+      elements.selectedWallConversionStatus.textContent = '';
+      elements.selectedWallConversionWarning.textContent = '';
+      elements.selectedWallConversionWarning.classList.add('is-hidden');
+      elements.convertSelectedWallBlocks.textContent = 'Converter em blocos';
+      elements.removeSelectedWallBlocks.classList.add('is-hidden');
+      return;
+    }
+
+    elements.convertSelectedWallBlocks.textContent = conversion.button_label || 'Converter em blocos';
+    elements.selectedWallConversionStatus.textContent = conversion.has_block_conversion
+      ? (conversion.block_conversion_hidden_host ? 'Parede host oculta e maquete em blocos com estrutura vinculada a esta parede.' : 'Maquete em blocos com estrutura vinculada a esta parede.')
+      : 'A parede continua paramétrica. Use o botão para gerar a alvenaria em blocos.';
+
+    if (conversion.has_block_conversion && conversion.can_remove_block_conversion) {
+      elements.removeSelectedWallBlocks.classList.remove('is-hidden');
+    } else {
+      elements.removeSelectedWallBlocks.classList.add('is-hidden');
+    }
+
+    if (conversion.block_conversion_warning) {
+      elements.selectedWallConversionWarning.textContent = conversion.block_conversion_warning;
+      elements.selectedWallConversionWarning.classList.remove('is-hidden');
+    } else {
+      elements.selectedWallConversionWarning.textContent = '';
+      elements.selectedWallConversionWarning.classList.add('is-hidden');
+    }
+  }
+
+  function stringValue(value) {
+    return typeof value === 'undefined' || value === null ? '' : String(value);
   }
 
   function resetOpeningEditor(openings) {

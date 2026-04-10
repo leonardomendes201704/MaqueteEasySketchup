@@ -13,6 +13,7 @@ module LeonardoLabs
         menu.add_item(door_command)
         menu.add_item(window_command)
         menu.add_item(baseboard_command)
+        menu.add_item(memorial_command)
 
         @toolbar = UI::Toolbar.new(EXTENSION_NAME)
         @toolbar.add_item(panel_command)
@@ -21,6 +22,7 @@ module LeonardoLabs
         @toolbar.add_item(door_command)
         @toolbar.add_item(window_command)
         @toolbar.add_item(baseboard_command)
+        @toolbar.add_item(memorial_command)
         @toolbar.restore if @toolbar.respond_to?(:restore)
 
         @installed = true
@@ -88,6 +90,17 @@ module LeonardoLabs
           command.menu_text = 'Gerar rodape'
           command.tooltip = 'Gerar ou regenerar rodape'
           command.status_bar_text = 'Gera ou regenera rodapes internos para o comodo selecionado.'
+          command
+        end
+      end
+
+      def memorial_command
+        @memorial_command ||= begin
+          command = UI::Command.new('Gerar memorial PDF') { PlanForgeBuilder.generate_material_memorial_pdf }
+          assign_icons(command, 'memorial')
+          command.menu_text = 'Gerar memorial PDF'
+          command.tooltip = 'Gerar memorial PDF de materiais e quantitativos'
+          command.status_bar_text = 'Gera um memorial tecnico em PDF com tudo que estiver convertido em blocos no modelo atual.'
           command
         end
       end

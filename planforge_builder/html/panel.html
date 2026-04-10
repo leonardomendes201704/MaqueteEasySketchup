@@ -136,6 +136,44 @@
           </label>
         </div>
 
+        <div class="editor-divider"></div>
+
+        <div class="card-head sub-head">
+          <h2>Dados do memorial</h2>
+        </div>
+
+        <div class="field-grid material-grid">
+          <label class="field field-span-2">
+            <span>Nome da obra</span>
+            <input id="memorialProjectName" type="text" maxlength="120">
+          </label>
+
+          <label class="field">
+            <span>Cliente</span>
+            <input id="memorialClientName" type="text" maxlength="120">
+          </label>
+
+          <label class="field">
+            <span>Local</span>
+            <input id="memorialSiteName" type="text" maxlength="120">
+          </label>
+
+          <label class="field">
+            <span>Responsavel tecnico</span>
+            <input id="memorialResponsibleName" type="text" maxlength="120">
+          </label>
+
+          <label class="field">
+            <span>Registro CREA/CAU</span>
+            <input id="memorialResponsibleRegistry" type="text" maxlength="120">
+          </label>
+
+          <label class="field field-span-2">
+            <span>Observacoes do memorial</span>
+            <textarea id="memorialNotes" rows="4" maxlength="2000"></textarea>
+          </label>
+        </div>
+
         <div class="actions">
           <button id="activateRoomTool" class="btn btn-primary">Gerar comodo</button>
           <button id="activateTool" class="btn btn-primary">Ativar ferramenta</button>
@@ -186,8 +224,134 @@
             </label>
           </div>
 
+          <div class="editor-divider"></div>
+
+          <div class="field-grid">
+            <label class="field field-span-2">
+              <span>Bloco padrao</span>
+              <input id="selectedWallBlockType" type="text" disabled>
+            </label>
+
+            <label class="field">
+              <span>Area bruta (m2)</span>
+              <input id="selectedWallGrossArea" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Area de aberturas (m2)</span>
+              <input id="selectedWallOpeningArea" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Area liquida (m2)</span>
+              <input id="selectedWallNetArea" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Quantidade de blocos</span>
+              <input id="selectedWallBlockCount" type="number" disabled>
+            </label>
+          </div>
+
+          <div class="editor-divider"></div>
+
+          <div class="field-grid">
+            <label class="field field-span-2">
+              <span>Traço da argamassa</span>
+              <input id="selectedWallMortarMix" type="text" disabled>
+            </label>
+
+            <label class="field">
+              <span>Argamassa (m3)</span>
+              <input id="selectedWallMortarVolume" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Cimento (kg)</span>
+              <input id="selectedWallMortarCement" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Cal (kg)</span>
+              <input id="selectedWallMortarLime" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Areia (m3)</span>
+              <input id="selectedWallMortarSand" type="number" disabled>
+            </label>
+          </div>
+
+          <p id="selectedWallMortarNote" class="selection-hint"></p>
+
+          <div class="editor-divider"></div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>Colunas</span>
+              <input id="selectedWallStructureColumns" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Cinta superior (m)</span>
+              <input id="selectedWallStructureBondBeamLength" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Vergas</span>
+              <input id="selectedWallStructureLintelCount" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Vergas totais (m)</span>
+              <input id="selectedWallStructureLintelLength" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Contra-vergas</span>
+              <input id="selectedWallStructureSillCount" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Contra-vergas totais (m)</span>
+              <input id="selectedWallStructureSillLength" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Vol. colunas (m3)</span>
+              <input id="selectedWallStructureColumnVolume" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Vol. cinta (m3)</span>
+              <input id="selectedWallStructureBondBeamVolume" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Vol. vergas (m3)</span>
+              <input id="selectedWallStructureLintelVolume" type="number" disabled>
+            </label>
+
+            <label class="field">
+              <span>Vol. contra-vergas (m3)</span>
+              <input id="selectedWallStructureSillVolume" type="number" disabled>
+            </label>
+
+            <label class="field field-span-2">
+              <span>Volume estrutural total (m3)</span>
+              <input id="selectedWallStructureTotalVolume" type="number" disabled>
+            </label>
+          </div>
+
+          <p id="selectedWallBlockWarning" class="selection-warning is-hidden"></p>
+          <p id="selectedWallStructureWarning" class="selection-warning is-hidden"></p>
+          <p id="selectedWallConversionStatus" class="selection-room-meta"></p>
+          <p id="selectedWallConversionWarning" class="selection-warning is-hidden"></p>
+
           <div class="actions compact-actions">
             <button id="applyWallEdits" class="btn btn-secondary" type="button">Aplicar na parede</button>
+            <button id="convertSelectedWallBlocks" class="btn btn-secondary" type="button">Converter em blocos</button>
+            <button id="removeSelectedWallBlocks" class="btn btn-ghost is-hidden" type="button">Remover blocos</button>
             <button id="regenerateSelectedRoom" class="btn btn-secondary" type="button">Regenerar comodo</button>
           </div>
 

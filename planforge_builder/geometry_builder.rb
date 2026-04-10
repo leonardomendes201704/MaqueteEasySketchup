@@ -4,6 +4,29 @@ module LeonardoLabs
       extend self
 
       TOLERANCE = 1.mm
+      BLOCK_TYPE = '14x19x39 cm'.freeze
+      BLOCK_MODULE_AREA_M2 = 0.08
+      BLOCK_THICKNESS = 14.cm
+      MORTAR_MIX = '1:2:8 (cimento:cal:areia media)'.freeze
+      MORTAR_CONSUMPTION_M3_PER_M2 = 0.0103
+      MORTAR_CEMENT_KG_PER_M3 = 192.52
+      MORTAR_LIME_KG_PER_M3 = 171.13
+      MORTAR_SAND_M3_PER_M3 = 1.14
+      MORTAR_NOTE = 'Estimativa para assentamento sem perdas, chapisco, emboço ou reboco.'.freeze
+      BLOCK_QUANTITY_ATTRIBUTES = %w[
+        gross_area_m2
+        opening_area_m2
+        net_area_m2
+        block_type
+        block_count
+        block_warning
+        mortar_mix
+        mortar_volume_m3
+        mortar_cement_kg
+        mortar_lime_kg
+        mortar_sand_m3
+        mortar_note
+      ].freeze
 
       def preview_data(start_point, end_point, settings = Settings.to_h, prev_point = nil, next_point = nil)
         sanitized = Settings.sanitize(settings)
@@ -51,6 +74,7 @@ module LeonardoLabs
         face.pushpull(sanitized[:wall_height_cm].to_f.cm)
         LayerManager.apply_to_entity(group, :wall)
         MaterialManager.apply_to_entity(group, :wall, sanitized)
+        persist_wall_quantities(group)
         group
       end
 
@@ -103,6 +127,7 @@ module LeonardoLabs
         rebuild_wall(group, start_point, end_point, settings, prev_point, next_point)
         store_opening_records(group, [])
         apply_opening_records(group, records)
+        persist_wall_quantities(group)
         group
       end
 
@@ -122,6 +147,29 @@ module LeonardoLabs
 
       def wall_info(group)
         wall_data(group)
+      end
+
+      def wall_quantities(group)
+        return nil unless physical_wall_group?(group)
+
+        wall = wall_data(group)
+        return nil unless wall
+
+        gross_area_m2 = area_to_m2(wall[:length].to_f * wall[:height].to_f)
+        opening_area_m2 = opening_records(group).sum do |record|
+          opening_height = record[:top_z].to_f - record[:bottom_z].to_f
+          area_to_m2(record[:opening_width].to_f * opening_height)
+        end
+        net_area_m2 = [gross_area_m2 - opening_area_m2, 0.0].max
+
+        {
+          :gross_area_m2 => gross_area_m2,
+          :opening_area_m2 => opening_area_m2,
+          :net_area_m2 => net_area_m2,
+          :block_type => BLOCK_TYPE,
+          :block_count => block_count_for(net_area_m2),
+          :block_warning => block_warning_for(wall)
+        }.merge(mortar_estimate_for(net_area_m2))
       end
 
       def normalized_contour_points(contour_points)
@@ -202,6 +250,7 @@ module LeonardoLabs
           normalize_opening_record(record, index)
         end.compact
         group.set_attribute(PLUGIN_ID, 'openings', JSON.generate(normalized.map { |record| opening_record_payload(record) }))
+        persist_wall_quantities(group)
       rescue StandardError => error
         Diagnostics.error('geometry_builder.store_opening_records', error)
       end
@@ -303,6 +352,7 @@ module LeonardoLabs
         record_opening(group, preview) if persist_record
         LayerManager.apply_to_entity(group, :wall)
         MaterialManager.apply_to_entity(group, :wall, entity_settings(group))
+        persist_wall_quantities(group) if persist_record
         group
       end
 
@@ -425,6 +475,7 @@ module LeonardoLabs
         end
 
         store_opening_records(group, applied_records)
+        persist_wall_quantities(group)
       end
 
       def opening_preview_from_record(group, record)
@@ -524,6 +575,35 @@ module LeonardoLabs
           :left_extent => left_extent,
           :right_extent => right_extent
         }
+      end
+
+      def persist_wall_quantities(group)
+        return unless group&.valid?
+
+        quantities = wall_quantities(group)
+        return clear_wall_quantities(group) unless quantities
+
+        group.set_attribute(PLUGIN_ID, 'gross_area_m2', quantities[:gross_area_m2].round(4))
+        group.set_attribute(PLUGIN_ID, 'opening_area_m2', quantities[:opening_area_m2].round(4))
+        group.set_attribute(PLUGIN_ID, 'net_area_m2', quantities[:net_area_m2].round(4))
+        group.set_attribute(PLUGIN_ID, 'block_type', quantities[:block_type])
+        group.set_attribute(PLUGIN_ID, 'block_count', quantities[:block_count].to_i)
+        group.set_attribute(PLUGIN_ID, 'mortar_mix', quantities[:mortar_mix])
+        group.set_attribute(PLUGIN_ID, 'mortar_volume_m3', quantities[:mortar_volume_m3].round(4))
+        group.set_attribute(PLUGIN_ID, 'mortar_cement_kg', quantities[:mortar_cement_kg].round(4))
+        group.set_attribute(PLUGIN_ID, 'mortar_lime_kg', quantities[:mortar_lime_kg].round(4))
+        group.set_attribute(PLUGIN_ID, 'mortar_sand_m3', quantities[:mortar_sand_m3].round(4))
+        group.set_attribute(PLUGIN_ID, 'mortar_note', quantities[:mortar_note])
+
+        if quantities[:block_warning].to_s.empty?
+          group.delete_attribute(PLUGIN_ID, 'block_warning')
+        else
+          group.set_attribute(PLUGIN_ID, 'block_warning', quantities[:block_warning])
+        end
+
+        group.description = quantity_summary(quantities)
+      rescue StandardError => error
+        Diagnostics.error('geometry_builder.persist_wall_quantities', error)
       end
 
       def normalize_opening_record(record, index = nil)
@@ -842,6 +922,52 @@ module LeonardoLabs
           (start_point.y + end_point.y) / 2.0,
           start_point.z + (height / 2.0)
         )
+      end
+
+      def clear_wall_quantities(group)
+        BLOCK_QUANTITY_ATTRIBUTES.each do |key|
+          group.delete_attribute(PLUGIN_ID, key)
+        end
+        group.description = ''
+        nil
+      end
+
+      def block_warning_for(wall)
+        return nil if (wall[:thickness] - BLOCK_THICKNESS).abs <= TOLERANCE
+
+        "Espessura da parede #{format('%.2f', to_cm(wall[:thickness]))} cm difere do bloco 14 cm."
+      end
+
+      def quantity_summary(quantities)
+        summary = "Blocos #{quantities[:block_type]}: #{quantities[:block_count]} un | Area liquida: #{format('%.2f', quantities[:net_area_m2])} m2"
+        warning = quantities[:block_warning].to_s.strip
+        warning.empty? ? summary : "#{summary} | Aviso: #{warning}"
+      end
+
+      def mortar_estimate_for(net_area_m2)
+        mortar_volume_m3 = net_area_m2.to_f * MORTAR_CONSUMPTION_M3_PER_M2
+
+        {
+          :mortar_mix => MORTAR_MIX,
+          :mortar_volume_m3 => mortar_volume_m3,
+          :mortar_cement_kg => mortar_volume_m3 * MORTAR_CEMENT_KG_PER_M3,
+          :mortar_lime_kg => mortar_volume_m3 * MORTAR_LIME_KG_PER_M3,
+          :mortar_sand_m3 => mortar_volume_m3 * MORTAR_SAND_M3_PER_M3,
+          :mortar_note => MORTAR_NOTE
+        }
+      end
+
+      def area_to_m2(area)
+        area.to_f / (1.m.to_f**2)
+      end
+
+      def block_count_for(net_area_m2)
+        normalized_area = net_area_m2.to_f.round(4)
+        ((normalized_area / BLOCK_MODULE_AREA_M2) - 1.0e-9).ceil
+      end
+
+      def to_cm(length)
+        length.to_f / 1.cm.to_f
       end
     end
   end

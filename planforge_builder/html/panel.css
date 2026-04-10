@@ -73,6 +73,10 @@ body {
   margin-bottom: 16px;
 }
 
+.sub-head {
+  margin-bottom: 10px;
+}
+
 .version {
   padding: 4px 10px;
   border-radius: 999px;
@@ -101,12 +105,14 @@ body {
 
 input,
 select,
+textarea,
 button {
   font: inherit;
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -116,9 +122,15 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 2px solid rgba(43, 103, 119, 0.18);
   border-color: var(--teal);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 96px;
 }
 
 input[type="color"] {
@@ -198,6 +210,17 @@ input[type="color"] {
 .selection-room-meta {
   margin: 10px 0 0;
   color: var(--muted);
+  line-height: 1.5;
+}
+
+.selection-warning {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(200, 115, 61, 0.12);
+  color: var(--clay-dark);
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.5;
 }
 

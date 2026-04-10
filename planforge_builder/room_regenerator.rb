@@ -63,6 +63,7 @@ module LeonardoLabs
         rebuild_floor(model, snapshot, contour, settings, room_token)
         reconciled = RoomReconciler.reconcile_room(model, room_token, settings)
         rebuild_baseboard(model, snapshot, contour, reconciled[:walls], settings, room_token)
+        WallBlockBuilder.refresh_for_walls(model, reconciled[:walls])
 
         room_snapshot(model, room_token)
       end
